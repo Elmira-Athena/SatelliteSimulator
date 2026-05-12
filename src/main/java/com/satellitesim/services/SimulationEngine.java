@@ -101,15 +101,32 @@ public class SimulationEngine extends AnimationTimer {
             objectRenderer.renderPath(newPath);
             
             if (routeStatusListener != null) {
-                routeStatusListener.accept(!newPath.isEmpty());
+                boolean connected = !newPath.isEmpty();
+                int hops = connected ? newPath.size() - 1 : 0;
+                double latency = connected ? calculatePathLatency(newPath) : 0;
+                routeStatusListener.accept(new RouteUpdate(connected, hops, latency));
             }
         }
     }
 
-    private java.util.function.Consumer<Boolean> routeStatusListener;
+    public record RouteUpdate(boolean connected, int hops, double totalLatency) {}
 
-    public void setRouteStatusListener(java.util.function.Consumer<Boolean> listener) {
+    private java.util.function.Consumer<RouteUpdate> routeStatusListener;
+
+    public void setRouteStatusListener(java.util.function.Consumer<RouteUpdate> listener) {
         this.routeStatusListener = listener;
+    }
+
+    private double calculatePathLatency(List<SpaceObject> path) {
+        double total = 0;
+        for (int i = 0; i < path.size() - 1; i++) {
+            SpaceObject a = path.get(i), b = path.get(i + 1);
+            double dist = physicsEngine.calculateDistance(
+                a.getLatitude(), a.getLongitude(), a.getAltitude(),
+                b.getLatitude(), b.getLongitude(), b.getAltitude());
+            total += physicsEngine.calculateTotalDelay(dist);
+        }
+        return total;
     }
 
     public void setTimeScale(double timeScale) {

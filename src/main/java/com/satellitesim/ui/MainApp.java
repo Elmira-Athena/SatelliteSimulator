@@ -24,6 +24,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -49,6 +50,10 @@ public class MainApp extends Application {
     private ComboBox<SpaceObject> sourceCombo;
     private ComboBox<SpaceObject> destCombo;
     private Label[] benchmarkLabels;
+    private Label[] liveStatsLabels;
+    private GridPane liveStatsPanel;
+    private final ArrayDeque<Boolean> routeHistory = new ArrayDeque<>();
+    private static final int ROUTE_HISTORY_SIZE = 120;
 
     @Override
     public void init() throws Exception {
@@ -119,19 +124,39 @@ public class MainApp extends Application {
         Label statusLabel = new Label("Status: Waiting...");
         statusLabel.setTextFill(Color.YELLOW);
         
-        simulationEngine.setRouteStatusListener(isConnected -> {
+        simulationEngine.setRouteStatusListener(update -> {
             Platform.runLater(() -> {
-                if (isConnected) {
+                if (update.connected()) {
                     statusLabel.setText("Status: CONNECTED");
                     statusLabel.setTextFill(Color.LIME);
                 } else {
                     statusLabel.setText("Status: NO ROUTE FOUND");
                     statusLabel.setTextFill(Color.RED);
                 }
+                if (liveStatsPanel != null && liveStatsPanel.isVisible()) {
+                    if (routeHistory.size() >= ROUTE_HISTORY_SIZE) routeHistory.poll();
+                    routeHistory.add(update.connected());
+                    long successCount = routeHistory.stream().filter(b -> b).count();
+                    double rate = (double) successCount / routeHistory.size() * 100;
+                    liveStatsLabels[0].setText(String.format("%.1f%%", rate));
+                    liveStatsLabels[1].setText(update.connected() ? String.valueOf(update.hops()) : "-");
+                    liveStatsLabels[2].setText(update.connected() ? String.format("%.3f s", update.totalLatency()) : "-");
+                }
             });
         });
 
-        VBox routingBox = new VBox(8, routingTitle, new Label("From:"), sourceCombo, new Label("To:"), destCombo, statusLabel);
+        GridPane liveStats = new GridPane();
+        liveStats.setVgap(5); liveStats.setHgap(10);
+        Label srL = createValueLabel("-"); Label hL2 = createValueLabel("-"); Label lL2 = createValueLabel("-");
+        this.liveStatsLabels = new Label[]{srL, hL2, lL2};
+        liveStats.add(createStyledLabel("Success:"), 0, 0); liveStats.add(srL, 1, 0);
+        liveStats.add(createStyledLabel("Hops:"),    0, 1); liveStats.add(hL2, 1, 1);
+        liveStats.add(createStyledLabel("Latency:"), 0, 2); liveStats.add(lL2, 1, 2);
+        this.liveStatsPanel = liveStats;
+        liveStatsPanel.setVisible(false);
+        liveStatsPanel.setManaged(false);
+
+        VBox routingBox = new VBox(8, routingTitle, new Label("From:"), sourceCombo, new Label("To:"), destCombo, statusLabel, liveStatsPanel);
         routingBox.setStyle("-fx-text-fill: white;");
         for(javafx.scene.Node n : routingBox.getChildren()) if(n instanceof Label && n != routingTitle && n != statusLabel) ((Label)n).setTextFill(Color.LIGHTGRAY);
 
@@ -220,9 +245,14 @@ public class MainApp extends Application {
     private void updateActiveRoute() {
         SpaceObject s = sourceCombo.getValue();
         SpaceObject d = destCombo.getValue();
-        if (s != null && d != null) {
+        boolean bothSelected = s != null && d != null;
+        if (bothSelected) {
             simulationEngine.setActiveRoute(s, d);
+            routeHistory.clear();
+            liveStatsLabels[0].setText("-"); liveStatsLabels[1].setText("-"); liveStatsLabels[2].setText("-");
         }
+        liveStatsPanel.setVisible(bothSelected);
+        liveStatsPanel.setManaged(bothSelected);
     }
 
     private void updateRoutingNodes(List<SpaceObject> objects) {
