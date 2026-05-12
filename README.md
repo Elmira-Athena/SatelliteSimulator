@@ -97,17 +97,86 @@ private static final String USER     = "sa";            // Thay bằng username 
 private static final String PASSWORD = "your_password"; // Thay bằng password của bạn
 ```
 
-### Bước 3 — Build và chạy ứng dụng
+### Bước 3 — Cấu hình JAVA_HOME (bắt buộc trên Windows)
 
+Maven wrapper yêu cầu biến môi trường `JAVA_HOME` trỏ đến thư mục JDK:
+
+1. Tìm đường dẫn JDK đã cài: `where java` trong CMD, lấy phần trước `\bin\java.exe`
+   - Ví dụ: `C:\Program Files\Eclipse Adoptium\jdk-21.0.3.9-hotspot`
+2. Vào **System Properties → Advanced → Environment Variables → New** (System variables):
+   - Name: `JAVA_HOME`
+   - Value: đường dẫn JDK ở trên
+3. Thêm `%JAVA_HOME%\bin` vào biến `Path`
+4. Mở lại Command Prompt để áp dụng thay đổi
+
+### Bước 4 — Build và chạy ứng dụng
+
+**Windows (Command Prompt / PowerShell):**
+```cmd
+mvnw.cmd compile
+mvnw.cmd javafx:run
+```
+
+**macOS / Linux:**
 ```bash
-# Biên dịch
 ./mvnw compile
-
-# Chạy ứng dụng
 ./mvnw javafx:run
 ```
 
 > **Lưu ý:** Lần đầu chạy Maven sẽ tự động tải thư viện JavaFX 21 và JDBC driver (~100MB). Cần kết nối internet.
+
+---
+
+## Chạy bằng Eclipse IDE
+
+### Yêu cầu Eclipse
+
+- **Eclipse IDE for Java Developers** phiên bản **2023-09** trở lên (hỗ trợ Java 21)
+- Đã cài JDK 21 trên máy và thiết lập `JAVA_HOME` (xem Bước 3 ở trên)
+
+### Bước 1 — Import dự án vào Eclipse
+
+1. Mở Eclipse, chọn **File → Import...**
+2. Chọn **Maven → Existing Maven Projects** → nhấn **Next**
+3. Tại **Root Directory**, nhấn **Browse** và chọn thư mục gốc `SatelliteSimulator`
+4. Eclipse tự động nhận diện `pom.xml` — tích chọn project → nhấn **Finish**
+5. Chờ Eclipse tải toàn bộ thư viện Maven (lần đầu ~100MB, cần internet)
+
+### Bước 2 — Cấu hình JDK 21
+
+Nếu Eclipse báo lỗi Java version, cần thêm JDK 21:
+
+1. Vào **Window → Preferences → Java → Installed JREs → Add...**
+2. Chọn **Standard VM** → **Next**
+3. Tại **JRE home**, nhấn **Directory** và chọn thư mục JDK 21
+   - Ví dụ: `C:\Program Files\Eclipse Adoptium\jdk-21.0.3.9-hotspot`
+4. Nhấn **Finish** → tích chọn JDK 21 vừa thêm → **Apply and Close**
+5. Chuột phải vào project → **Maven → Update Project** → nhấn **OK**
+
+### Bước 3 — Chạy ứng dụng (cách đơn giản nhất)
+
+**Dùng Maven Build (khuyến nghị — không cần cấu hình thêm):**
+
+1. Chuột phải vào tên project trong **Package Explorer**
+2. Chọn **Run As → Maven Build...**
+3. Tại ô **Goals**, nhập: `javafx:run`
+4. Nhấn **Run**
+
+Ứng dụng sẽ khởi động. Lần sau chỉ cần nhấn nút **Run** (▶) màu xanh lá.
+
+### Bước 4 — Chạy Database Setup trong Eclipse
+
+Thay vì dùng SSMS, có thể chạy script SQL ngay trong Eclipse:
+
+1. Vào **Window → Show View → Other → Data Management → Data Source Explorer**
+2. Chuột phải **Database Connections → New...**
+3. Chọn **SQL Server**, điền thông tin kết nối:
+   - Host: `localhost`, Port: `1433`
+   - Username: `sa`, Password: mật khẩu của bạn
+4. Sau khi kết nối thành công, mở file `src/main/resources/sql/database_setup.sql`
+5. Chuột phải vào nội dung file → **Execute SQL**
+
+> **Nếu không thấy Data Source Explorer:** Cài thêm plugin **Eclipse Data Tools Platform (DTP)** qua **Help → Eclipse Marketplace** → tìm "DTP".
 
 ---
 
