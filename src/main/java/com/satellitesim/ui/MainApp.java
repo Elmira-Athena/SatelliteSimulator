@@ -52,6 +52,7 @@ public class MainApp extends Application {
     private Label[] benchmarkLabels;
     private Label[] liveStatsLabels;
     private GridPane liveStatsPanel;
+    private ListView<SpaceObject> objectList;
     private final ArrayDeque<Boolean> routeHistory = new ArrayDeque<>();
     private static final int ROUTE_HISTORY_SIZE = 120;
 
@@ -80,11 +81,12 @@ public class MainApp extends Application {
         simulationEngine = new SimulationEngine(physicsEngine, routingEngine, objectRenderer, currentObjects);
         simulationEngine.start();
 
-        VBox sideBar = createBenchmarkSidebar();
+        ScrollPane sideBar = createBenchmarkSidebar();
         root.setRight(sideBar);
 
-        // Setup ban đầu cho Combo box
+        // Setup ban đầu cho Combo box và danh sách vật thể
         updateRoutingNodes(currentObjects);
+        updateObjectList(currentObjects);
 
         Scene scene = new Scene(root, WINDOW_WIDTH, WINDOW_HEIGHT, true);
         scene.setFill(Color.web("#0a0a2e"));
@@ -101,11 +103,10 @@ public class MainApp extends Application {
         primaryStage.show();
     }
 
-    private VBox createBenchmarkSidebar() {
+    private ScrollPane createBenchmarkSidebar() {
         VBox sidebar = new VBox(20);
         sidebar.setPadding(new Insets(20));
-        sidebar.setPrefWidth(300);
-        sidebar.setStyle("-fx-background-color: rgba(10, 10, 40, 0.9); -fx-border-color: #3f3fbf; -fx-border-width: 0 0 0 2;");
+        sidebar.setStyle("-fx-background-color: rgba(10, 10, 40, 0.9);");
 
         // --- PHẦN 1: ROUTING TƯƠNG TÁC ---
         Label routingTitle = new Label("LIVE ROUTING");
@@ -234,12 +235,44 @@ public class MainApp extends Application {
         metrics.add(createStyledLabel("Hops:"), 0, 1);    metrics.add(hL, 1, 1);
         metrics.add(createStyledLabel("Latency:"), 0, 2); metrics.add(lL, 1, 2);
 
+        Label objectsTitle = new Label("SPACE OBJECTS");
+        objectsTitle.setTextFill(Color.CYAN);
+        objectsTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 15px;");
+
+        objectList = new ListView<>();
+        objectList.setCellFactory(lv -> new ListCell<>() {
+            @Override
+            protected void updateItem(SpaceObject item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setStyle("-fx-background-color: transparent;");
+                } else {
+                    boolean isGS = item.getType() == SpaceObjectType.GROUND_STATION;
+                    setText((isGS ? "[GS]  " : "[SAT] ") + item.getName());
+                    setTextFill(isGS ? Color.ORANGE : Color.LIGHTBLUE);
+                    setStyle("-fx-background-color: transparent;");
+                }
+            }
+        });
+        objectList.setPrefHeight(220);
+        objectList.setStyle("-fx-background-color: #0d0d30; -fx-control-inner-background: #0d0d30;");
+
         sidebar.getChildren().addAll(
-            routingBox, new Separator(), 
+            routingBox, new Separator(),
             addTitle, addForm, addBtn, new Separator(),
-            benchTitle, new Label("Random Scenario:"), scenarioBtns, resetBtn, metrics
+            benchTitle, new Label("Random Scenario:"), scenarioBtns, resetBtn, metrics,
+            new Separator(),
+            objectsTitle, objectList
         );
-        return sidebar;
+
+        ScrollPane scrollPane = new ScrollPane(sidebar);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setPrefWidth(310);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setStyle("-fx-background: #0a0a2e; -fx-background-color: #0a0a2e; -fx-border-color: #3f3fbf; -fx-border-width: 0 0 0 2;");
+        return scrollPane;
     }
 
     private void updateActiveRoute() {
@@ -253,6 +286,10 @@ public class MainApp extends Application {
         }
         liveStatsPanel.setVisible(bothSelected);
         liveStatsPanel.setManaged(bothSelected);
+    }
+
+    private void updateObjectList(List<SpaceObject> objects) {
+        objectList.setItems(FXCollections.observableArrayList(objects));
     }
 
     private void updateRoutingNodes(List<SpaceObject> objects) {
@@ -307,6 +344,7 @@ public class MainApp extends Application {
         objectRenderer.renderObjects(objects);
         simulationEngine.setSpaceObjects(objects);
         updateActiveRoute();
+        updateObjectList(objects);
         simulationEngine.start();
     }
 
