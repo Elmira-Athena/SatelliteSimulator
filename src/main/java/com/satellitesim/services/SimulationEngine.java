@@ -62,11 +62,15 @@ public class SimulationEngine extends AnimationTimer {
 
         // Tính khoảng thời gian trôi qua giữa 2 frame (giây)
         double elapsedSeconds = (now - lastUpdate) / 1_000_000_000.0;
-        
+
         // Nhân với timeScale để tăng tốc độ mô phỏng
         double simulationDeltaTime = elapsedSeconds * timeScale;
-        
-        updateState(simulationDeltaTime);
+
+        try {
+            updateState(simulationDeltaTime);
+        } catch (Exception e) {
+            System.err.println("SimulationEngine: lỗi trong frame, bỏ qua - " + e.getMessage());
+        }
 
         lastUpdate = now;
     }

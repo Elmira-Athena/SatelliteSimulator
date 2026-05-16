@@ -60,9 +60,13 @@ public class SpaceObjectRepositoryImpl implements SpaceObjectRepository {
              ResultSet rs = stmt.executeQuery(SQL_FIND_ALL)) {
 
             while (rs.next()) {
-                SpaceObject obj = mapResultSetToSpaceObject(rs);
-                if (obj != null) {
-                    result.add(obj);
+                try {
+                    SpaceObject obj = mapResultSetToSpaceObject(rs);
+                    if (obj != null) {
+                        result.add(obj);
+                    }
+                } catch (RuntimeException e) {
+                    System.err.println("Bỏ qua dòng không hợp lệ trong SpaceObjects: " + e.getMessage());
                 }
             }
         } catch (SQLException e) {
@@ -79,7 +83,11 @@ public class SpaceObjectRepositoryImpl implements SpaceObjectRepository {
             pstmt.setString(1, id);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    return Optional.ofNullable(mapResultSetToSpaceObject(rs));
+                    try {
+                        return Optional.ofNullable(mapResultSetToSpaceObject(rs));
+                    } catch (RuntimeException e) {
+                        System.err.println("Bỏ qua dòng không hợp lệ (findById): " + e.getMessage());
+                    }
                 }
             }
         } catch (SQLException e) {

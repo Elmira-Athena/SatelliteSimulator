@@ -4,6 +4,7 @@ import com.satellitesim.core.models.GroundStation;
 import com.satellitesim.core.models.Satellite;
 import com.satellitesim.core.models.SpaceObject;
 import com.satellitesim.core.models.SpaceObjectType;
+import com.satellitesim.data.db.DatabaseConnection;
 import com.satellitesim.data.repository.SpaceObjectRepositoryImpl;
 import com.satellitesim.services.PhysicsEngine;
 import com.satellitesim.services.routing.RoutingEvaluator;
@@ -56,10 +57,14 @@ public class MainApp extends Application {
     private final ArrayDeque<Boolean> routeHistory = new ArrayDeque<>();
     private static final int ROUTE_HISTORY_SIZE = 120;
 
+    private boolean dbConnected = true;
+
     @Override
     public void init() throws Exception {
         SpaceObjectRepositoryImpl repository = new SpaceObjectRepositoryImpl();
         spaceObjectService = new SpaceObjectService(repository);
+        // Chạy trên background thread (init lifecycle) để không chặn FX thread
+        dbConnected = DatabaseConnection.testConnection();
     }
 
     @Override
@@ -77,7 +82,7 @@ public class MainApp extends Application {
 
         // Khởi tạo list rỗng để tránh UnsupportedOperationException khi clear/addAll
         currentObjects = new ArrayList<>(loadAndRenderObjectsFromDb());
-        
+
         simulationEngine = new SimulationEngine(physicsEngine, routingEngine, objectRenderer, currentObjects);
         simulationEngine.start();
 
@@ -91,16 +96,21 @@ public class MainApp extends Application {
         Scene scene = new Scene(root, WINDOW_WIDTH, WINDOW_HEIGHT, true);
         scene.setFill(Color.web("#0a0a2e"));
 
-        primaryStage.widthProperty().addListener((obs, oldVal, newVal) -> 
+        primaryStage.widthProperty().addListener((obs, oldVal, newVal) ->
             spaceView.getSubScene().setWidth(newVal.doubleValue() - sideBar.getWidth())
         );
-        primaryStage.heightProperty().addListener((obs, oldVal, newVal) -> 
+        primaryStage.heightProperty().addListener((obs, oldVal, newVal) ->
             spaceView.getSubScene().setHeight(newVal.doubleValue())
         );
 
         primaryStage.setTitle(APP_TITLE);
         primaryStage.setScene(scene);
         primaryStage.show();
+
+        // Hiển thị sau khi stage đã show để đảm bảo dialog modal hoạt động đúng
+        if (!dbConnected) {
+            showDatabaseConnectionAlert(primaryStage);
+        }
     }
 
     private ScrollPane createBenchmarkSidebar() {
@@ -203,9 +213,15 @@ public class MainApp extends Application {
                 if (spaceObjectService.saveSpaceObject(newObj)) {
                     refreshSystemData(); // Reload everything
                     nameIn.clear(); latIn.clear(); lonIn.clear(); altIn.clear();
+                } else {
+                    Alert saveAlert = new Alert(Alert.AlertType.ERROR);
+                    saveAlert.setTitle("Lỗi lưu dữ liệu");
+                    saveAlert.setHeaderText("Không thể lưu vào cơ sở dữ liệu");
+                    saveAlert.setContentText("Vật thể không được lưu. Vui lòng kiểm tra kết nối cơ sở dữ liệu.");
+                    saveAlert.show();
                 }
             } catch (Exception ex) {
-                Alert alert = new Alert(Alert.AlertType.ERROR, "Invalid Input: " + ex.getMessage());
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Dữ liệu không hợp lệ: " + ex.getMessage());
                 alert.show();
             }
         });
@@ -322,14 +338,18 @@ public class MainApp extends Application {
         updateLiveSimulation(scenario);
 
         // Run benchmark in background thread to avoid UI lag
-        new Thread(() -> {
+        Thread benchmarkThread = new Thread(() -> {
             RoutingEvaluator.BenchmarkResult res = routingEvaluator.runBenchmark(scenario, 100);
             Platform.runLater(() -> {
                 benchmarkLabels[0].setText(String.format("%.1f%%", res.successRate()));
                 benchmarkLabels[1].setText(String.format("%.2f", res.avgHops()));
                 benchmarkLabels[2].setText(String.format("%.3f s", res.avgLatency()));
             });
-        }).start();
+        });
+        benchmarkThread.setDaemon(true);
+        benchmarkThread.setUncaughtExceptionHandler((t, e) ->
+            System.err.println("Benchmark thread error: " + e.getMessage()));
+        benchmarkThread.start();
     }
 
     private void refreshSystemData() {
@@ -352,6 +372,22 @@ public class MainApp extends Application {
         List<SpaceObject> objects = spaceObjectService.getAllSpaceObjects();
         objectRenderer.renderObjects(objects);
         return objects;
+    }
+
+    private void showDatabaseConnectionAlert(Stage owner) {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.initOwner(owner);
+        alert.setTitle("Lỗi kết nối cơ sở dữ liệu");
+        alert.setHeaderText("Không thể kết nối đến SQL Server");
+        alert.setContentText(
+            "Ứng dụng không thể kết nối đến cơ sở dữ liệu tại localhost:1433.\n" +
+            "Mô phỏng sẽ khởi động với dữ liệu trống.\n\n" +
+            "Vui lòng kiểm tra:\n" +
+            "  • SQL Server đang chạy\n" +
+            "  • Database 'SatelliteSimulation' đã được tạo\n" +
+            "  • Thông tin đăng nhập chính xác"
+        );
+        alert.showAndWait();
     }
 
     public static void main(String[] args) {
