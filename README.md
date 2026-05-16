@@ -402,5 +402,8 @@ File test: `src/test/java/com/satellitesim/core/DomainModelTest.java`
 ---
 
 ## Nhóm phát triển
+**Phạm Minh Tuấn** - Giảng viên hướng dẫn.
 
-**Đội Antigravity** — Dự án môn học Lập trình Hướng đối tượng.
+**Nguyễn Đắc Vinh - Bùi Nguyễn Thảo Nguyên** — Sinh viên thực hiện.
+
+*Đồ án môn lập trình Java.*
