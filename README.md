@@ -72,6 +72,53 @@ Dự án tuân theo kiến trúc **N-Layer** với chiều phụ thuộc một c
 
 ---
 
+## Bước 0 — Tải và cài Java 21 (Temurin)
+
+> **Bỏ qua bước này nếu đã có JDK 21 trên máy.** Kiểm tra bằng lệnh `java -version` — nếu thấy `openjdk version "21.x.x"` thì tiến thẳng đến Bước 1.
+
+### Windows (khuyến nghị)
+
+1. Vào **[https://adoptium.net](https://adoptium.net)** → chọn **Temurin 21 (LTS)** → **Windows x64 Installer (.msi)**
+2. Chạy file `.msi` vừa tải. Trong màn hình **Custom Setup**, đảm bảo tích chọn **cả hai** tùy chọn:
+   - ✅ **Set JAVA_HOME variable**
+   - ✅ **Add to PATH**
+   > 💡 Nếu tích hai ô này, bạn có thể **bỏ qua Bước 3** (cấu hình JAVA_HOME thủ công) ở phần sau.
+3. Nhấn **Install** → chờ cài xong → nhấn **Finish**
+4. **Verify:** Mở **Command Prompt mới** (quan trọng: phải mở mới) và chạy:
+   ```cmd
+   java -version
+   ```
+   Kết quả đúng:
+   ```
+   openjdk version "21.x.x" ...
+   OpenJDK Runtime Environment Temurin-21...
+   ```
+
+### macOS
+
+1. Vào **[https://adoptium.net](https://adoptium.net)** → chọn **Temurin 21 (LTS)**:
+   - Mac Intel: chọn **macOS x64 (.pkg)**
+   - Mac Apple Silicon (M1/M2/M3): chọn **macOS aarch64 (.pkg)**
+2. Chạy file `.pkg` → làm theo hướng dẫn cài đặt → PATH được cấu hình tự động
+3. **Verify:** Mở Terminal mới và chạy:
+   ```bash
+   java -version
+   ```
+
+### Linux (Ubuntu / Debian)
+
+```bash
+sudo apt update && sudo apt install -y wget apt-transport-https
+wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public \
+  | sudo tee /etc/apt/trusted.gpg.d/adoptium.gpg
+echo "deb https://packages.adoptium.net/artifactory/deb $(lsb_release -cs) main" \
+  | sudo tee /etc/apt/sources.list.d/adoptium.list
+sudo apt update && sudo apt install -y temurin-21-jdk
+java -version
+```
+
+---
+
 ## Hướng dẫn Cài đặt
 
 ### Bước 1 — Cài đặt Cơ sở dữ liệu
