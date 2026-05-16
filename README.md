@@ -196,7 +196,7 @@ java -version
 
 | Lỗi | Nguyên nhân | Cách fix |
 |---|---|---|
-| `JAVA_HOME is not set` | Chưa set biến môi trường | Xem lại **Bước 0** (tích ô trong installer) hoặc **Bước 3** (set thủ công) |
+| `JAVA_HOME is not set` | Chưa set biến môi trường | **Windows:** xem lại **Bước 0** (tích ô trong installer Temurin) hoặc **Bước 3** (set thủ công). **macOS/Linux:** thường tự động — nếu không, thêm `export JAVA_HOME=$(/usr/libexec/java_home)` (macOS) hoặc `export JAVA_HOME=/usr/lib/jvm/temurin-21-amd64` (Linux) vào `~/.zshrc` / `~/.bashrc` |
 | `'mvnw.cmd' is not recognized` | Chưa `cd` vào thư mục dự án | Chạy `cd đường-dẫn\SatelliteSimulator` trước |
 | `Connection refused` / lỗi `port 1433` | SQL Server chưa chạy | Mở **Services** (Win+R → `services.msc`) → tìm `SQL Server (MSSQLSERVER)` → Start |
 | `BUILD FAILURE` ở lần đầu | Maven đang tải thư viện | Chờ ~2 phút, cần internet, sau đó chạy lại |
