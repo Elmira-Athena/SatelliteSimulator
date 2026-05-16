@@ -146,6 +146,8 @@ private static final String PASSWORD = "your_password"; // Thay bằng password 
 
 ### Bước 3 — Cấu hình JAVA_HOME (bắt buộc trên Windows)
 
+> 💡 **Bỏ qua bước này** nếu bạn đã tích chọn **"Set JAVA_HOME variable"** trong installer Temurin ở Bước 0. Kiểm tra: mở CMD mới → `echo %JAVA_HOME%` → nếu thấy đường dẫn JDK thì đã xong.
+
 Maven wrapper yêu cầu biến môi trường `JAVA_HOME` trỏ đến thư mục JDK:
 
 1. Tìm đường dẫn JDK đã cài: `where java` trong CMD, lấy phần trước `\bin\java.exe`
