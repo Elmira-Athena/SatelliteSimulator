@@ -219,6 +219,8 @@ java -version
 4. Eclipse tự động nhận diện `pom.xml` — tích chọn project → nhấn **Finish**
 5. Chờ Eclipse tải toàn bộ thư viện Maven (lần đầu ~100MB, cần internet)
 
+> ✅ **Kiểm tra:** Project xuất hiện trong **Package Explorer** mà không có dấu ❌ đỏ trên icon → import thành công.
+
 ### Bước 2 — Cấu hình JDK 21
 
 Nếu Eclipse báo lỗi Java version, cần thêm JDK 21:
@@ -230,6 +232,10 @@ Nếu Eclipse báo lỗi Java version, cần thêm JDK 21:
 4. Nhấn **Finish** → tích chọn JDK 21 vừa thêm → **Apply and Close**
 5. Chuột phải vào project → **Maven → Update Project** → nhấn **OK**
 
+> ✅ **Kiểm tra:** Chuột phải project → **Properties → Java Build Path → Libraries** → phải thấy `JRE System Library [JavaSE-21]`.
+
+> ❌ **Lỗi "Java compiler compliance" hiển thị 1.5 / 1.7 / 1.8:** Chuột phải project → **Properties → Java Compiler** → bỏ tích **"Use compliance from execution environment"** → chọn **21** → **Apply and Close**.
+
 ### Bước 3 — Chạy ứng dụng (cách đơn giản nhất)
 
 **Dùng Maven Build (khuyến nghị — không cần cấu hình thêm):**
@@ -240,6 +246,12 @@ Nếu Eclipse báo lỗi Java version, cần thêm JDK 21:
 4. Nhấn **Run**
 
 Ứng dụng sẽ khởi động. Lần sau chỉ cần nhấn nút **Run** (▶) màu xanh lá.
+
+> ✅ **Kiểm tra:** Console Eclipse hiển thị dòng `JavaFX Application Thread` và cửa sổ 3D mô phỏng vệ tinh xuất hiện.
+
+> ❌ **Lỗi "No suitable driver found" hoặc DB connection thất bại:** SQL Server chưa chạy hoặc sai mật khẩu. Kiểm tra lại `DatabaseConnection.java` (Bước 2 phần Hướng dẫn Cài đặt) và đảm bảo SQL Server service đang hoạt động.
+
+> ❌ **Lỗi "Error occurred during initialization of boot layer" (JavaFX module error):** Nguyên nhân do nhấn **Run** trực tiếp trên `MainApp.java` thay vì Maven. Phải dùng **Run As → Maven Build → Goals: `javafx:run`** — không chạy `MainApp.java` bằng nút Run thông thường.
 
 ### Bước 4 — Chạy Database Setup trong Eclipse
 
@@ -254,6 +266,8 @@ Thay vì dùng SSMS, có thể chạy script SQL ngay trong Eclipse:
 5. Chuột phải vào nội dung file → **Execute SQL**
 
 > **Nếu không thấy Data Source Explorer:** Cài thêm plugin **Eclipse Data Tools Platform (DTP)** qua **Help → Eclipse Marketplace** → tìm "DTP".
+
+> 💡 **Cách đơn giản hơn:** Nếu không muốn cài DTP, dùng **SQL Server Management Studio (SSMS)** để chạy script SQL — xem lại Bước 1 phần Hướng dẫn Cài đặt.
 
 ---
 
