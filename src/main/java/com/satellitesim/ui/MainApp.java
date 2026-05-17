@@ -198,31 +198,47 @@ public class MainApp extends Application {
         addBtn.setStyle("-fx-base: #1a5a1a; -fx-text-fill: white;");
         addBtn.setOnAction(e -> {
             try {
-                String id = UUID.randomUUID().toString();
-                String name = nameIn.getText();
+                String name = nameIn.getText().trim();
                 SpaceObjectType type = typeIn.getValue();
-                double lat = Double.parseDouble(latIn.getText());
-                double lon = Double.parseDouble(lonIn.getText());
-                double alt = Double.parseDouble(altIn.getText());
 
-                SpaceObject newObj = (type == SpaceObjectType.GROUND_STATION) 
+                if (name.isEmpty()) {
+                    showValidationError("Vui lòng nhập tên cho vật thể.");
+                    return;
+                }
+                if (latIn.getText().isBlank() || lonIn.getText().isBlank()) {
+                    showValidationError("Vui lòng nhập đầy đủ Vĩ độ và Kinh độ.");
+                    return;
+                }
+                if (type == SpaceObjectType.SATELLITE && altIn.getText().isBlank()) {
+                    showValidationError("Vui lòng nhập Độ cao cho vệ tinh.");
+                    return;
+                }
+
+                String id = UUID.randomUUID().toString();
+                double lat = Double.parseDouble(latIn.getText().trim());
+                double lon = Double.parseDouble(lonIn.getText().trim());
+                double alt = (type == SpaceObjectType.SATELLITE)
+                        ? Double.parseDouble(altIn.getText().trim())
+                        : 0.0;
+
+                SpaceObject newObj = (type == SpaceObjectType.GROUND_STATION)
                         ? new GroundStation(id, name, lat, lon)
                         : new Satellite(id, name, lat, lon, alt);
 
-                // Lưu DB
                 if (spaceObjectService.saveSpaceObject(newObj)) {
-                    refreshSystemData(); // Reload everything
+                    refreshSystemData();
                     nameIn.clear(); latIn.clear(); lonIn.clear(); altIn.clear();
                 } else {
                     Alert saveAlert = new Alert(Alert.AlertType.ERROR);
                     saveAlert.setTitle("Lỗi lưu dữ liệu");
                     saveAlert.setHeaderText("Không thể lưu vào cơ sở dữ liệu");
                     saveAlert.setContentText("Vật thể không được lưu. Vui lòng kiểm tra kết nối cơ sở dữ liệu.");
-                    saveAlert.show();
+                    saveAlert.showAndWait();
                 }
-            } catch (Exception ex) {
-                Alert alert = new Alert(Alert.AlertType.ERROR, "Dữ liệu không hợp lệ: " + ex.getMessage());
-                alert.show();
+            } catch (NumberFormatException ex) {
+                showValidationError("Vĩ độ, Kinh độ và Độ cao phải là số hợp lệ (ví dụ: 21.0, 105.5, 400).");
+            } catch (IllegalArgumentException ex) {
+                showValidationError(translateValidationError(ex.getMessage()));
             }
         });
 
@@ -388,6 +404,25 @@ public class MainApp extends Application {
             "  • Thông tin đăng nhập chính xác"
         );
         alert.showAndWait();
+    }
+
+    private void showValidationError(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Dữ liệu không hợp lệ");
+        alert.setHeaderText("Vui lòng kiểm tra lại thông tin nhập");
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    private String translateValidationError(String message) {
+        if (message != null && message.contains("Latitude")) {
+            return "Vĩ độ phải nằm trong khoảng -90° đến +90°.";
+        } else if (message != null && message.contains("Longitude")) {
+            return "Kinh độ phải nằm trong khoảng -180° đến +180°.";
+        } else if (message != null && message.contains("Altitude")) {
+            return "Độ cao không được âm (phải >= 0 km).";
+        }
+        return message != null ? message : "Dữ liệu không hợp lệ.";
     }
 
     public static void main(String[] args) {
